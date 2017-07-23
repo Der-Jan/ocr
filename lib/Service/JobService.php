@@ -133,18 +133,20 @@ class JobService {
      * 
      * @param string[] $languages            
      * @param array $files            
+     * @param boolean $replace            
      * @return string
      */
-    public function process($languages, $files) {
+    public function process($languages, $files, $replace) {
         try {
-            $this->logger->debug('Will now process files: {files} with languages: {languages}', 
+            $this->logger->debug('Will now process files: {files} with languages: {languages} and replace: {replace}', 
                     [
                             'files' => json_encode($files),
-                            'languages' => json_encode($languages)
+                            'languages' => json_encode($languages),
+                            'replace' => json_encode($replace)
                     ]);
             // Check if files and language not empty
             $noLang = $this->noLanguage($languages);
-            if (!empty($files) && ($this->checkForAcceptedLanguages($languages) || $noLang)) {
+            if (!empty($files) && ($this->checkForAcceptedLanguages($languages) || $noLang) && is_bool($replace)) {
                 // language part:
                 if ($noLang) {
                     $languages = [];
@@ -162,7 +164,7 @@ class JobService {
                     $tempFile = $this->getTempFile($fType);
                     // Create job object
                     $job = new OcrJob(OcrConstants::STATUS_PENDING, $source, $target, $tempFile, $fType, $this->userId, 
-                            false, $fInfo->getName(), null);
+                            false, $fInfo->getName(), null, $replace);
                     // Init client and send task / job
                     // Feed the worker
                     $this->redisService->sendJob($job, $languages);
@@ -200,6 +202,7 @@ class JobService {
             $job->setUserId(null);
             $job->setErrorDisplayed(null);
             $job->setErrorLog(null);
+            $job->setReplace(null);
             return $job;
         } catch (Exception $e) {
             if ($e instanceof DoesNotExistException) {
@@ -270,8 +273,7 @@ class JobService {
             foreach ($processed as $job) {
                 if ($this->fileUtil->fileExists($job->getTempFile())) {
                     // Save the tmp file with newname
-                    $this->view->file_put_contents($job->getTarget(), 
-                            $this->fileUtil->getFileContents($job->getTempFile()));
+                    $this->pullResult($job);
                     $this->jobMapper->delete($job);
                     $this->fileUtil->execRemove($job->getTempFile());
                 } else {
@@ -310,6 +312,18 @@ class JobService {
         } catch (Exception $e) {
             $this->handleException($e);
         }
+    }
+
+    /**
+     * Gets the OCR result and puts it to Nextcloud.
+     * 
+     * @param OcrJob $job            
+     */
+    private function pullResult($job) {
+        if ($job->getReplace() && $job->getType() !== OcrConstants::OCRmyPDF) {
+            // TODO: historisiere
+        }
+        $this->view->file_put_contents($job->getTarget(), $this->fileUtil->getFileContents($job->getTempFile()));
     }
 
     /**

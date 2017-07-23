@@ -95,11 +95,12 @@ class JobServiceTest extends TestCase {
         $languages = [
                 'any'
         ];
+        $replace = true;
         $this->l10nMock->expects($this->once())
             ->method('t')
             ->with('Empty parameters passed.')
             ->will($this->returnValue('Empty parameters passed.'));
-        $this->cut->process($languages, $files);
+        $this->cut->process($languages, $files, $replace);
     }
 
     /**
@@ -113,6 +114,7 @@ class JobServiceTest extends TestCase {
         $languages = [
                 'fra'
         ];
+        $replace = true;
         $this->appConfigServiceMock->expects($this->once())
             ->method('getAppValue')
             ->with('languages')
@@ -121,7 +123,7 @@ class JobServiceTest extends TestCase {
             ->method('t')
             ->with('Empty parameters passed.')
             ->will($this->returnValue('Empty parameters passed.'));
-        $this->cut->process($languages, $files);
+        $this->cut->process($languages, $files, $replace);
     }
 
     /**
@@ -135,6 +137,7 @@ class JobServiceTest extends TestCase {
         $languages = [
                 ''
         ];
+        $replace = true;
         $this->appConfigServiceMock->expects($this->once())
             ->method('getAppValue')
             ->with('languages')
@@ -144,6 +147,29 @@ class JobServiceTest extends TestCase {
             ->with('Empty parameters passed.')
             ->will($this->returnValue('Empty parameters passed.'));
         $this->cut->process($languages, $files);
+    }
+    
+    /**
+     * @expectedException OCA\Ocr\Service\NotFoundException
+     * @expectedExceptionMessage Empty parameters passed.
+     */
+    public function testProcessWrongReplaceType() {
+        $files = [
+                'id' => 1
+        ];
+        $languages = [
+                'deu'
+        ];
+        $replace = '';
+        $this->appConfigServiceMock->expects($this->once())
+        ->method('getAppValue')
+        ->with('languages')
+        ->will($this->returnValue('deu;eng;spa;deu-frak'));
+        $this->l10nMock->expects($this->once())
+        ->method('t')
+        ->with('Empty parameters passed.')
+        ->will($this->returnValue('Empty parameters passed.'));
+        $this->cut->process($languages, $files, $replace);
     }
 
     public function testProcessSpecificNoLanguage() {
@@ -161,6 +187,7 @@ class JobServiceTest extends TestCase {
         $languages = [
                 'any'
         ];
+        $replace = true;
         $this->appConfigServiceMock->expects($this->once())
             ->method('getAppValue')
             ->with('languages')
@@ -248,13 +275,13 @@ class JobServiceTest extends TestCase {
         // step out from tempfile creation
         $job1 = new OcrJob(OcrConstants::STATUS_PENDING, 'john/' . $this->fileInfoNotSharedPdf->getPath(), 
                 '/test/path/to/file_OCR.pdf', '/tmp/ocr_randomTempFileName', OcrConstants::OCRmyPDF, $this->userId, 
-                false, $this->fileInfoSharedPdf->getName(), null);
+                false, $this->fileInfoSharedPdf->getName(), null, true);
         $job2 = new OcrJob(OcrConstants::STATUS_PENDING, 'notJohn/' . $this->fileInfoSharedPdf->getPath(), 
                 '/test/path/to/file_OCR.pdf', '/tmp/ocr_randomTempFileName', OcrConstants::OCRmyPDF, $this->userId, 
-                false, $this->fileInfoSharedPdf->getName(), null);
+                false, $this->fileInfoSharedPdf->getName(), null, true);
         $job3 = new OcrJob(OcrConstants::STATUS_PENDING, 'notJohn/' . $this->fileInfoSharedPng->getPath(), 
                 '/test/path/to/file_OCR.txt', '/tmp/ocr_randomTempFileName.txt', OcrConstants::TESSERACT, $this->userId, 
-                false, $this->fileInfoSharedPng->getName(), null);
+                false, $this->fileInfoSharedPng->getName(), null, true);
         $this->redisServiceMock->expects($this->exactly(3))
             ->method('sendJob')
             ->withConsecutive([
@@ -267,7 +294,7 @@ class JobServiceTest extends TestCase {
                 $job3,
                 []
         ]);
-        $result = $this->cut->process($languages, $files);
+        $result = $this->cut->process($languages, $files, $replace);
         $this->assertEquals('PROCESSING', $result);
     }
 
@@ -287,6 +314,7 @@ class JobServiceTest extends TestCase {
                 'deu',
                 'deu-frak'
         ];
+        $replace = true;
         $this->appConfigServiceMock->expects($this->once())
             ->method('getAppValue')
             ->with('languages')
@@ -375,13 +403,13 @@ class JobServiceTest extends TestCase {
         // step out from tempfile creation
         $job1 = new OcrJob(OcrConstants::STATUS_PENDING, 'john/' . $this->fileInfoNotSharedPdf->getPath(), 
                 '/test/path/to/file_OCR.pdf', '/tmp/ocr_randomTempFileName', OcrConstants::OCRmyPDF, $this->userId, 
-                false, $this->fileInfoNotSharedPdf->getName(), null);
+                false, $this->fileInfoNotSharedPdf->getName(), null, true);
         $job2 = new OcrJob(OcrConstants::STATUS_PENDING, 'notJohn/' . $this->fileInfoSharedPdf->getPath(), 
                 '/test/path/to/file_OCR.pdf', '/tmp/ocr_randomTempFileName', OcrConstants::OCRmyPDF, $this->userId, 
-                false, $this->fileInfoSharedPdf->getName(), null);
+                false, $this->fileInfoSharedPdf->getName(), null, true);
         $job3 = new OcrJob(OcrConstants::STATUS_PENDING, 'notJohn/' . $this->fileInfoSharedPng->getPath(), 
                 '/test/path/to/file_OCR.txt', '/tmp/ocr_randomTempFileName.txt', OcrConstants::TESSERACT, $this->userId, 
-                false, $this->fileInfoSharedPng->getName(), null);
+                false, $this->fileInfoSharedPng->getName(), null, true);
         $this->redisServiceMock->expects($this->exactly(3))
             ->method('sendJob')
             ->withConsecutive([
@@ -394,7 +422,7 @@ class JobServiceTest extends TestCase {
                 $job3,
                 $languages
         ]);
-        $result = $this->cut->process($languages, $files);
+        $result = $this->cut->process($languages, $files, $replace);
         $this->assertEquals('PROCESSING', $result);
     }
 
@@ -417,6 +445,7 @@ class JobServiceTest extends TestCase {
         $languages = [
                 'any'
         ];
+        $replace = true;
         $this->appConfigServiceMock->expects($this->once())
             ->method('getAppValue')
             ->with('languages')
@@ -456,7 +485,7 @@ class JobServiceTest extends TestCase {
             ->method('tempnamWrapper')
             ->with('/tmp', OcrConstants::TEMPFILE_PREFIX)
             ->will($this->throwException(new NotFoundException('Temp file cannot be created.')));
-        $this->cut->process($languages, $files);
+        $this->cut->process($languages, $files, $replace);
     }
 
     /**
@@ -478,6 +507,7 @@ class JobServiceTest extends TestCase {
         $languages = [
                 'any'
         ];
+        $replace = true;
         $this->appConfigServiceMock->expects($this->once())
             ->method('getAppValue')
             ->with('languages')
@@ -522,7 +552,7 @@ class JobServiceTest extends TestCase {
             ->with('/tmp/ocr_randomTempFileName')
             ->willThrowException(
                 new NotFoundException('Cannot delete temporary file during temp file creation for Tesseract.'));
-        $this->cut->process($languages, $files);
+        $this->cut->process($languages, $files, $replace);
     }
 
     /**
@@ -544,6 +574,7 @@ class JobServiceTest extends TestCase {
         $languages = [
                 'any'
         ];
+        $replace = true;
         $this->appConfigServiceMock->expects($this->once())
             ->method('getAppValue')
             ->with('languages')
@@ -590,7 +621,7 @@ class JobServiceTest extends TestCase {
             ->method('touchWrapper')
             ->with('/tmp/ocr_randomTempFileName.txt')
             ->willThrowException(new NotFoundException('Cannot create temporary file for Tesseract.'));
-        $this->cut->process($languages, $files);
+        $this->cut->process($languages, $files, $replace);
     }
 
     /**
@@ -612,6 +643,7 @@ class JobServiceTest extends TestCase {
         $languages = [
                 'any'
         ];
+        $replace = true;
         $this->appConfigServiceMock->expects($this->once())
             ->method('getAppValue')
             ->with('languages')
@@ -661,7 +693,7 @@ class JobServiceTest extends TestCase {
             ->method('chmodWrapper')
             ->with('/tmp/ocr_randomTempFileName.txt', 0600)
             ->willThrowException(new NotFoundException('Cannot set permissions to temporary file for Tesseract.'));
-        $this->cut->process($languages, $files);
+        $this->cut->process($languages, $files, $replace);
     }
 
     /**
@@ -703,7 +735,7 @@ class JobServiceTest extends TestCase {
     public function testDeleteJob() {
         $job = new OcrJob(OcrConstants::STATUS_FAILED, 'john/' . $this->fileInfoNotSharedPdf->getPath(), 
                 '/test/path/to/file_OCR.pdf', '/tmp/ocr_randomTempFileName', OcrConstants::OCRmyPDF, $this->userId, 
-                false, $this->fileInfoNotSharedPdf->getName(), 'testLog');
+                false, $this->fileInfoNotSharedPdf->getName(), 'testLog', true);
         $job->setId(1);
         $this->jobMapperMock->expects($this->once())
             ->method('find')
@@ -722,6 +754,7 @@ class JobServiceTest extends TestCase {
         $this->assertNull($result->getTempFile());
         $this->assertNull($result->getType());
         $this->assertNull($result->getUserId());
+        $this->assertNull($result->getReplace());
         $this->assertEquals(1, $result->getId());
         $this->assertEquals($this->fileInfoNotSharedPdf->getName(), $result->getOriginalFilename());
     }
@@ -729,11 +762,11 @@ class JobServiceTest extends TestCase {
     public function testGetAllJobsForUser() {
         $job1 = new OcrJob(OcrConstants::STATUS_FAILED, 'john/' . $this->fileInfoNotSharedPdf->getPath(), 
                 '/test/path/to/file_OCR.pdf', '/tmp/ocr_randomTempFileName', OcrConstants::OCRmyPDF, $this->userId, 
-                false, $this->fileInfoNotSharedPdf->getName(), 'testLog');
+                false, $this->fileInfoNotSharedPdf->getName(), 'testLog', true);
         $job1->setId(1);
         $job2 = new OcrJob(OcrConstants::STATUS_PENDING, 'notJohn/' . $this->fileInfoSharedPng->getPath(), 
                 '/test/path/to/file_OCR.txt', '/tmp/ocr_randomTempFileName.txt', OcrConstants::TESSERACT, $this->userId, 
-                true, $this->fileInfoSharedPng->getName(), null);
+                true, $this->fileInfoSharedPng->getName(), null, false);
         $job2->setId(2);
         $this->jobMapperMock->expects($this->once())
             ->method('findAll')
@@ -747,6 +780,7 @@ class JobServiceTest extends TestCase {
         $this->assertEquals($this->fileInfoNotSharedPdf->getName(), $result[0]->getOriginalFilename());
         $this->assertEquals(OcrConstants::STATUS_FAILED, $result[0]->getStatus());
         $this->assertEquals('testLog', $result[0]->getErrorLog());
+        $this->assertTrue($result[0]->getReplace());
         $this->assertNull($result[0]->getErrorDisplayed());
         $this->assertNull($result[0]->getSource());
         $this->assertNull($result[0]->getTarget());
@@ -756,6 +790,7 @@ class JobServiceTest extends TestCase {
         $this->assertEquals(2, $result[1]->getId());
         $this->assertEquals($this->fileInfoSharedPng->getName(), $result[1]->getOriginalFilename());
         $this->assertEquals(OcrConstants::STATUS_PENDING, $result[1]->getStatus());
+        $this->assertFalse($result[1]->getReplace());
         $this->assertNull($result[1]->getErrorLog());
         $this->assertNull($result[1]->getErrorDisplayed());
         $this->assertNull($result[1]->getSource());
@@ -784,11 +819,11 @@ class JobServiceTest extends TestCase {
     public function testCheckForFinishedJobsSuccessfully() {
         $job1 = new OcrJob(OcrConstants::STATUS_PENDING, 'john/' . $this->fileInfoNotSharedPdf->getPath(), 
                 '/test/path/to/file_OCR.pdf', '/tmp/ocr_randomTempFileName', OcrConstants::OCRmyPDF, $this->userId, 
-                false, $this->fileInfoNotSharedPdf->getName(), null);
+                false, $this->fileInfoNotSharedPdf->getName(), null, true);
         $job1->setId(1);
         $job2 = new OcrJob(OcrConstants::STATUS_PENDING, 'notJohn/' . $this->fileInfoSharedPng->getPath(), 
                 '/test/path/to/file_OCR.txt', '/tmp/ocr_randomTempFileName.txt', OcrConstants::TESSERACT, $this->userId, 
-                false, $this->fileInfoSharedPng->getName(), null);
+                false, $this->fileInfoSharedPng->getName(), null, true);
         $job2->setId(2);
         $redisFinishedJobs = [
                 '{"id":1,"error":false,"log":""}',
@@ -826,7 +861,7 @@ class JobServiceTest extends TestCase {
     public function testHandleProcessedFileNotExists() {
         $job1 = new OcrJob(OcrConstants::STATUS_PROCESSED, 'john/' . $this->fileInfoNotSharedPdf->getPath(), 
                 '/test/path/to/file_OCR.pdf', '/tmp/ocr_randomTempFileName', OcrConstants::OCRmyPDF, $this->userId, 
-                false, $this->fileInfoNotSharedPdf->getName(), null);
+                false, $this->fileInfoNotSharedPdf->getName(), null, true);
         $job1->setId(1);
         $this->jobMapperMock->expects($this->once())
             ->method('findAllProcessed')
@@ -853,11 +888,11 @@ class JobServiceTest extends TestCase {
     public function testHandleProcessed() {
         $job1 = new OcrJob(OcrConstants::STATUS_PROCESSED, 'john/' . $this->fileInfoNotSharedPdf->getPath(), 
                 '/test/path/to/file_OCR.pdf', '/tmp/ocr_randomTempFileName', OcrConstants::OCRmyPDF, $this->userId, 
-                false, $this->fileInfoNotSharedPdf->getName(), null);
+                false, $this->fileInfoNotSharedPdf->getName(), null, true);
         $job1->setId(1);
         $job2 = new OcrJob(OcrConstants::STATUS_PROCESSED, 'notJohn/' . $this->fileInfoSharedPng->getPath(), 
                 '/test/path/to/file_OCR.txt', '/tmp/ocr_randomTempFileName.txt', OcrConstants::TESSERACT, $this->userId, 
-                false, $this->fileInfoSharedPng->getName(), null);
+                false, $this->fileInfoSharedPng->getName(), null, true);
         $job2->setId(2);
         $this->jobMapperMock->expects($this->once())
             ->method('findAllProcessed')
@@ -912,11 +947,11 @@ class JobServiceTest extends TestCase {
     public function testHandleFailed() {
         $job1 = new OcrJob(OcrConstants::STATUS_FAILED, 'john/' . $this->fileInfoNotSharedPdf->getPath(), 
                 '/test/path/to/file_OCR.pdf', '/tmp/ocr_randomTempFileName', OcrConstants::OCRmyPDF, $this->userId, 
-                false, $this->fileInfoNotSharedPdf->getName(), null);
+                false, $this->fileInfoNotSharedPdf->getName(), null, true);
         $job1->setId(1);
         $job2 = new OcrJob(OcrConstants::STATUS_FAILED, 'notJohn/' . $this->fileInfoSharedPng->getPath(), 
                 '/test/path/to/file_OCR.txt', '/tmp/ocr_randomTempFileName.txt', OcrConstants::TESSERACT, $this->userId, 
-                false, $this->fileInfoSharedPng->getName(), null);
+                false, $this->fileInfoSharedPng->getName(), null, true);
         $job2->setId(2);
         $this->jobMapperMock->expects($this->once())
             ->method('findAllFailed')
