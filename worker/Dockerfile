@@ -10,8 +10,7 @@ LABEL maintainer="janiskoehr@icloud.com" description="This image serves the depe
 ARG LANGUAGES="tesseract-ocr-fra tesseract-ocr-spa tesseract-ocr-deu"
 
 # User
-RUN groupadd --gid 1000 node \
-    && useradd --uid 1000 --gid node --shell /bin/bash --create-home node
+RUN usermod -d /home/node -s /bin/bash www-data
 
 # Tesseract / languages
 # For now leave tess4 because of bad performance RUN add-apt-repository ppa:alex-p/tesseract-ocr -y   && \
@@ -62,6 +61,6 @@ RUN npm install
 RUN npm run build \
     && rm -r src/ package.json tsconfig.app.json tsconfig.json
 
-USER node
+USER www-data
 
 CMD ["node","/home/node/worker/dist/main.js"]

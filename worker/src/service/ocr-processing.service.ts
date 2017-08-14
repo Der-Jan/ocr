@@ -52,7 +52,7 @@ export class OcrProcessingService {
         const spawn = this.spawnSync('tesseract',
             [
                 `${Configuration.INPUT_PATH}/${job.source}`,
-                `${Configuration.OUTPUT_PATH}/${job.tempFile.replace(/\.[^/.]+$/, '')}`,
+                `${Configuration.OUTPUT_PATH}/${job.tempFile.replace(/.*\//, '')}`,
                 `-l`, `${job.languages.join('+')}`,
             ],
             Configuration.SPAWN_SYNC_OPTIONS);
@@ -66,7 +66,7 @@ export class OcrProcessingService {
         const spawn = this.spawnSync('ocrmypdf',
             [
                 `${Configuration.INPUT_PATH}/${job.source}`,
-                `${Configuration.OUTPUT_PATH}/${job.tempFile}`,
+                `${Configuration.OUTPUT_PATH}/${job.tempFile.replace(/.*\//, '')}`,
                 `-l`, `${job.languages.join('+')}`,
                 `--skip-text`,
             ],
