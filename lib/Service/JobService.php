@@ -97,6 +97,8 @@ class JobService {
      */
     private $fileUtil;
 
+    private $dataDirectory;
+
     /**
      * JobService constructor.
      * 
@@ -125,6 +127,7 @@ class JobService {
         $this->appConfigService = $appConfigService;
         $this->phpUtil = $phpUtil;
         $this->fileUtil = $fileUtil;
+        $this->dataDirectory = $systemConfig = \OC::$server->getSystemConfig()->getValue("datadirectory", \OC::$SERVERROOT.'/data');
     }
 
     /**
@@ -272,6 +275,8 @@ class JobService {
                     // Save the tmp file with newname
                     $this->view->file_put_contents($job->getTarget(), 
                             $this->fileUtil->getFileContents($job->getTempFile()));
+		    $sourceTime = filemtime($this->dataDirectory .'/'. $job->getSource());
+		    $this->view->touch($job->getTarget(), $sourceTime);
                     $this->jobMapper->delete($job);
                     $this->fileUtil->execRemove($job->getTempFile());
                 } else {
